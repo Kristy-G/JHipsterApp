@@ -23,5 +23,5 @@ relationship ManyToOne {
 // Set pagination options
 paginate Employee with infinite-scroll
 
-
+service all with serviceImpl except Employee
 
