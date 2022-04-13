@@ -2,6 +2,7 @@ package com.company.jhipsterapp.web.rest;
 
 import com.company.jhipsterapp.domain.Department;
 import com.company.jhipsterapp.repository.DepartmentRepository;
+import com.company.jhipsterapp.service.DepartmentService;
 import com.company.jhipsterapp.web.rest.errors.BadRequestAlertException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -12,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import tech.jhipster.web.util.HeaderUtil;
 import tech.jhipster.web.util.ResponseUtil;
@@ -22,7 +22,6 @@ import tech.jhipster.web.util.ResponseUtil;
  */
 @RestController
 @RequestMapping("/api")
-@Transactional
 public class DepartmentResource {
 
     private final Logger log = LoggerFactory.getLogger(DepartmentResource.class);
@@ -32,9 +31,12 @@ public class DepartmentResource {
     @Value("${jhipster.clientApp.name}")
     private String applicationName;
 
+    private final DepartmentService departmentService;
+
     private final DepartmentRepository departmentRepository;
 
-    public DepartmentResource(DepartmentRepository departmentRepository) {
+    public DepartmentResource(DepartmentService departmentService, DepartmentRepository departmentRepository) {
+        this.departmentService = departmentService;
         this.departmentRepository = departmentRepository;
     }
 
@@ -51,7 +53,7 @@ public class DepartmentResource {
         if (department.getId() != null) {
             throw new BadRequestAlertException("A new department cannot already have an ID", ENTITY_NAME, "idexists");
         }
-        Department result = departmentRepository.save(department);
+        Department result = departmentService.save(department);
         return ResponseEntity
             .created(new URI("/api/departments/" + result.getId()))
             .headers(HeaderUtil.createEntityCreationAlert(applicationName, true, ENTITY_NAME, result.getId().toString()))
@@ -85,7 +87,7 @@ public class DepartmentResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        Department result = departmentRepository.save(department);
+        Department result = departmentService.update(department);
         return ResponseEntity
             .ok()
             .headers(HeaderUtil.createEntityUpdateAlert(applicationName, true, ENTITY_NAME, department.getId().toString()))
@@ -120,16 +122,7 @@ public class DepartmentResource {
             throw new BadRequestAlertException("Entity not found", ENTITY_NAME, "idnotfound");
         }
 
-        Optional<Department> result = departmentRepository
-            .findById(department.getId())
-            .map(existingDepartment -> {
-                if (department.getName() != null) {
-                    existingDepartment.setName(department.getName());
-                }
-
-                return existingDepartment;
-            })
-            .map(departmentRepository::save);
+        Optional<Department> result = departmentService.partialUpdate(department);
 
         return ResponseUtil.wrapOrNotFound(
             result,
@@ -145,7 +138,7 @@ public class DepartmentResource {
     @GetMapping("/departments")
     public List<Department> getAllDepartments() {
         log.debug("REST request to get all Departments");
-        return departmentRepository.findAll();
+        return departmentService.findAll();
     }
 
     /**
@@ -157,7 +150,7 @@ public class DepartmentResource {
     @GetMapping("/departments/{id}")
     public ResponseEntity<Department> getDepartment(@PathVariable Long id) {
         log.debug("REST request to get Department : {}", id);
-        Optional<Department> department = departmentRepository.findById(id);
+        Optional<Department> department = departmentService.findOne(id);
         return ResponseUtil.wrapOrNotFound(department);
     }
 
@@ -170,7 +163,7 @@ public class DepartmentResource {
     @DeleteMapping("/departments/{id}")
     public ResponseEntity<Void> deleteDepartment(@PathVariable Long id) {
         log.debug("REST request to delete Department : {}", id);
-        departmentRepository.deleteById(id);
+        departmentService.delete(id);
         return ResponseEntity
             .noContent()
             .headers(HeaderUtil.createEntityDeletionAlert(applicationName, true, ENTITY_NAME, id.toString()))
