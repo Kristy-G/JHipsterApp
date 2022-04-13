@@ -1,0 +1,29 @@
+
+entity Employee {
+	firstName String,
+	lastName String,
+	email String,
+	department String
+}
+
+entity Department {
+	name String
+}
+
+relationship OneToMany {
+	Department to
+	
+	Employee{department}
+}
+
+relationship ManyToOne {
+	Employee{department} to Department
+}
+
+// Set pagination options
+paginate JobHistory, Employee with infinite-scroll
+paginate Job with pagination
+
+// Set service options to all except few
+service all with serviceImpl except Employee, Job
+
